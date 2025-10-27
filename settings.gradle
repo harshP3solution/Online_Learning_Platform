@@ -1,0 +1,12 @@
+rootProject.name = 'OnlineLearning'
+
+include ("share_persistence")
+include ("CourseService")
+include ("Userservices")
+include ("EnrollmentService")
+include ("CertificateService")
+include ("AuthService")
+
+
+
+
