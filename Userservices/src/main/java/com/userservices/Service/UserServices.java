@@ -31,7 +31,7 @@ public class UserServices {
         this.emailService = emailService;
     }
 
-    // ✅ Return all users as DTOs
+    //  Return all users as DTOs
     public List<UserResponseDTO> getAll() {
         return userRepo.findAll()
                 .stream()
@@ -39,14 +39,14 @@ public class UserServices {
                 .toList();
     }
 
-    // ✅ Return single user as DTO
+    //  Return single user as DTO
     public UserResponseDTO getById(Long id) {
         return userRepo.findById(id)
                 .map(this::convertToDTO)
                 .orElse(null);
     }
 
-    // ✅ Convert Entity → DTO to avoid recursion
+    //  Convert Entity → DTO to avoid recursion
     private UserResponseDTO convertToDTO(User user) {
         if (user == null) return null;
 
@@ -91,12 +91,12 @@ public class UserServices {
         userRepo.deleteById(id);
     }
 
-    // ✅ Get all courses for a user (from Course microservice)
+    // Get all courses for a user (from Course microservice)
     public List<Course> getAllCoursesForUser(Long userId) {
         return courseClient.getAllCourses();
     }
 
-    // ✅ Register user to a course and send email
+    //  Register user to a course and send email
     public void registerUserToCourse(Long userId, Long courseId) {
         User user = userRepo.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));

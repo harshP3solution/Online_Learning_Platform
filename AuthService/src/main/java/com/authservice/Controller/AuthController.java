@@ -1,12 +1,15 @@
 package com.authservice.Controller;
+
 import com.authservice.config.JwtService;
+import com.persistence.DTO.ApiResponse;
 import com.persistence.Entity.User;
 import com.persistence.Repository.UserRepo;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
+import java.util.NoSuchElementException;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -23,29 +26,29 @@ public class AuthController {
     }
 
     @PostMapping("/signup")
-    public ResponseEntity<?> signup(@RequestBody User user) {
-        // Encode the password
+    public ResponseEntity<ApiResponse<Map<String, Object>>> signup(@RequestBody User user) {
+        if (userRepo.findByEmail(user.getEmail()).isPresent()) {
+            throw new IllegalArgumentException("User already exists with this email");
+        }
+
         user.setPasswordHash(passwordEncoder.encode(user.getPasswordHash()));
-
-
-
-        // Save user to database
         userRepo.save(user);
 
-        return ResponseEntity.ok(Map.of("message", "User created successfully", "role", user.getRole().name()));
+        Map<String, Object> result = Map.of("role", user.getRole().name());
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.ok("User created successfully", result));
     }
 
-
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody User request) {
+    public ResponseEntity<ApiResponse<Map<String, String>>> login(@RequestBody User request) {
         User user = userRepo.findByEmail(request.getEmail())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new NoSuchElementException("User not found with email: " + request.getEmail()));
 
         if (!passwordEncoder.matches(request.getPasswordHash(), user.getPasswordHash())) {
-            throw new RuntimeException("Invalid credentials");
+            throw new IllegalArgumentException("Invalid credentials");
         }
 
         String token = jwtService.generateToken(user.getEmail(), user.getRole().name());
-        return ResponseEntity.ok(Map.of("token", token));
+        return ResponseEntity.ok(ApiResponse.ok("Login successful", Map.of("token", token)));
     }
 }

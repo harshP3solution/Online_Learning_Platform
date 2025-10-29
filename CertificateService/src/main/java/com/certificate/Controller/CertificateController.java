@@ -1,12 +1,14 @@
 package com.certificate.Controller;
 
-import com.persistence.DTO.CertificateDTO;
-import com.persistence.Entity.Certificate;
 import com.certificate.Service.CertificateService;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import com.persistence.DTO.ApiResponse;
+import com.persistence.DTO.CertificateDTO;
+import org.springframework.http.*;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
+
 import java.util.List;
+import java.util.NoSuchElementException;
 
 @RestController
 @RequestMapping("/api/certificates")
@@ -18,25 +20,33 @@ public class CertificateController {
         this.certificateService = certificateService;
     }
 
-    // Manually trigger certificate generation
     @PostMapping("/generate/{enrollmentId}")
     @PreAuthorize("hasAnyRole('INSTRUCTOR', 'ADMIN')")
-    public ResponseEntity<CertificateDTO> generateCertificate(@PathVariable Long enrollmentId) {
+    public ResponseEntity<ApiResponse<CertificateDTO>> generateCertificate(@PathVariable Long enrollmentId) {
         CertificateDTO certificate = certificateService.generateCertificateByEnrollmentId(enrollmentId);
-        return ResponseEntity.ok(certificate);
+        if (certificate == null) {
+            throw new NoSuchElementException("No enrollment found with ID: " + enrollmentId);
+        }
+        return ResponseEntity.ok(ApiResponse.ok("Certificate generated successfully", certificate));
     }
 
-    // Get all certificates for a student
     @GetMapping("/student/{studentId}")
     @PreAuthorize("hasAnyRole('STUDENT', 'ADMIN')")
-    public ResponseEntity<List<CertificateDTO>> getCertificatesByStudent(@PathVariable Long studentId) {
-        return ResponseEntity.ok(certificateService.getCertificatesByStudent(studentId));
+    public ResponseEntity<ApiResponse<List<CertificateDTO>>> getCertificatesByStudent(@PathVariable Long studentId) {
+        List<CertificateDTO> list = certificateService.getCertificatesByStudent(studentId);
+        if (list.isEmpty()) {
+            throw new NoSuchElementException("No certificates found for student ID: " + studentId);
+        }
+        return ResponseEntity.ok(ApiResponse.ok("Certificates fetched successfully", list));
     }
 
-    // Get all certificates for a course
     @GetMapping("/course/{courseId}")
     @PreAuthorize("hasAnyRole('INSTRUCTOR', 'ADMIN')")
-    public ResponseEntity<List<CertificateDTO>> getCertificatesByCourse(@PathVariable Long courseId) {
-        return ResponseEntity.ok(certificateService.getCertificatesByCourse(courseId));
+    public ResponseEntity<ApiResponse<List<CertificateDTO>>> getCertificatesByCourse(@PathVariable Long courseId) {
+        List<CertificateDTO> list = certificateService.getCertificatesByCourse(courseId);
+        if (list.isEmpty()) {
+            throw new NoSuchElementException("No certificates found for course ID: " + courseId);
+        }
+        return ResponseEntity.ok(ApiResponse.ok("Certificates fetched successfully", list));
     }
 }

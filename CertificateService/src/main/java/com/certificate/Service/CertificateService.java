@@ -82,9 +82,9 @@ public class CertificateService {
                 .build();
     }
 
-    /**
-     * Get all certificates by student
-     */
+
+     //Get all certificates by student
+
     public List<CertificateDTO> getCertificatesByStudent(Long studentId) {
         User student = userRepo.findById(studentId)
                 .orElseThrow(() -> new RuntimeException("Student not found with id: " + studentId));
@@ -104,9 +104,9 @@ public class CertificateService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Get all certificates by course
-     */
+
+     // Get all certificates by course
+
     public List<CertificateDTO> getCertificatesByCourse(Long courseId) {
         Course course = courseRepository.findById(courseId)
                 .orElseThrow(() -> new RuntimeException("Course not found with id: " + courseId));

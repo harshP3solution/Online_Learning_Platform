@@ -1,12 +1,13 @@
 package com.enrollment.Controller;
 
 import com.enrollment.Service.EnrollmentService;
-import com.persistence.DTO.EnrollmentResponseDTO;
+import com.persistence.DTO.*;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.http.*;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
 import java.util.List;
+import java.util.NoSuchElementException;
 
 @RestController
 @RequestMapping("/api/enrollments")
@@ -15,30 +16,28 @@ public class EnrollmentController {
 
     private final EnrollmentService enrollmentService;
 
-    // Enroll a student in a course
     @PostMapping("/enroll")
     @PreAuthorize("hasRole('STUDENT')")
-    public ResponseEntity<EnrollmentResponseDTO> enrollStudent(
-            @RequestParam Long studentId,
-            @RequestParam Long courseId) {
+    public ResponseEntity<ApiResponse<EnrollmentResponseDTO>> enrollStudent(
+            @RequestParam Long studentId, @RequestParam Long courseId) {
         EnrollmentResponseDTO enrollment = enrollmentService.enrollStudent(studentId, courseId);
-        return ResponseEntity.ok(enrollment);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.ok("Student enrolled successfully", enrollment));
     }
 
-
-    // Get all enrollments for a student
     @GetMapping("/student/{studentId}")
     @PreAuthorize("hasAnyRole('STUDENT', 'ADMIN')")
-    public ResponseEntity<List<EnrollmentResponseDTO>> getEnrollmentsByStudent(@PathVariable Long studentId) {
+    public ResponseEntity<ApiResponse<List<EnrollmentResponseDTO>>> getEnrollmentsByStudent(@PathVariable Long studentId) {
         List<EnrollmentResponseDTO> enrollments = enrollmentService.getEnrollmentsByStudent(studentId);
-        return ResponseEntity.ok(enrollments);
+        if (enrollments.isEmpty()) throw new NoSuchElementException("No enrollments found for student ID " + studentId);
+        return ResponseEntity.ok(ApiResponse.ok("Enrollments fetched successfully", enrollments));
     }
 
-    // Get all enrollments for a course
     @GetMapping("/course/{courseId}")
     @PreAuthorize("hasAnyRole('INSTRUCTOR', 'ADMIN')")
-    public ResponseEntity<List<EnrollmentResponseDTO>> getEnrollmentsByCourse(@PathVariable Long courseId) {
+    public ResponseEntity<ApiResponse<List<EnrollmentResponseDTO>>> getEnrollmentsByCourse(@PathVariable Long courseId) {
         List<EnrollmentResponseDTO> enrollments = enrollmentService.getEnrollmentsByCourse(courseId);
-        return ResponseEntity.ok(enrollments);
+        if (enrollments.isEmpty()) throw new NoSuchElementException("No enrollments found for course ID " + courseId);
+        return ResponseEntity.ok(ApiResponse.ok("Enrollments fetched successfully", enrollments));
     }
 }

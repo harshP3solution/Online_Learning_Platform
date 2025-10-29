@@ -101,14 +101,14 @@ public class QuizService {
                 .build();
         quizRepository.save(quiz);
 
-        // ✅ FIX: clone questions properly
+        //  clone questions properly
         for (QuizQuestion q : selected) {
             QuizQuestion copy = QuizQuestion.builder()
                     .quiz(quiz)
                     .course(course)
                     .questionText(q.getQuestionText())
                     .optionsJson(q.getOptionsJson())
-                    .correctAnswer(q.getCorrectAnswer()) // ✅ carry correct answer
+                    .correctAnswer(q.getCorrectAnswer())
                     .marks(q.getMarks())
                     .build();
             quizQuestionRepository.save(copy);
@@ -134,9 +134,7 @@ public class QuizService {
     }
 
 
-    // --------------------------------------------------------------------------------------------
-    // ✅ SUBMIT QUIZ ANSWERS
-    // --------------------------------------------------------------------------------------------
+    //SUBMIT QUIZ ANSWERS
     @Transactional
     public SubmitResponseDTO submitQuiz(SubmitRequestDTO req) {
         Quiz quiz = quizRepository.findById(req.getQuizId())
@@ -184,86 +182,6 @@ public class QuizService {
                 .message("Quiz submitted successfully")
                 .build();
     }
-//    @Transactional
-//    public SubmitResponseDTO submitQuiz(SubmitRequestDTO req) {
-//        Quiz quiz = quizRepository.findById(req.getQuizId())
-//                .orElseThrow(() -> new NoSuchElementException("Quiz not found: " + req.getQuizId()));
-//
-//        User student = userRepo.findById(req.getStudentId())
-//                .orElseThrow(() -> new NoSuchElementException("Student not found: " + req.getStudentId()));
-//
-//        Map<Long, String> answers = Optional.ofNullable(req.getAnswers()).orElse(Map.of());
-//        List<QuizQuestion> questions = quizQuestionRepository.findByQuizId(quiz.getId());
-//
-//        int totalMarks = 0;
-//        int score = 0;
-//
-//        System.out.println("\n=== QUIZ SUBMISSION DEBUG START ===");
-//        System.out.println("Quiz ID: " + quiz.getId() + " | Student ID: " + student.getId());
-//        System.out.println("------------------------------------");
-//
-//        for (QuizQuestion q : questions) {
-//            int marks = Optional.ofNullable(q.getMarks()).orElse(1);
-//            totalMarks += marks;
-//
-//            String correct = q.getCorrectAnswer();
-//            String given = answers.get(q.getId());
-//
-//            System.out.println("QID: " + q.getId() +
-//                    " | Given: [" + given + "] | Correct: [" + correct + "]");
-//
-//            if (answersMatch(given, correct)) {
-//                score += marks;
-//                System.out.println("✅ Matched QID " + q.getId() + " | +" + marks + " marks");
-//            } else {
-//                System.out.println("❌ Wrong QID " + q.getId());
-//            }
-//        }
-//
-//        System.out.println("------------------------------------");
-//        System.out.println("Final Score: " + score + "/" + totalMarks);
-//        System.out.println("=== QUIZ SUBMISSION DEBUG END ===\n");
-//
-//        double percentage = totalMarks == 0 ? 0 : (score * 100.0 / totalMarks);
-//        boolean passed = percentage >= 50.0;
-//
-//        QuizSubmission submission = QuizSubmission.builder()
-//                .quiz(quiz)
-//                .student(student)
-//                .answersJson(convertMapToJson(answers))
-//                .score(score)
-//                .submittedAt(LocalDateTime.now())
-//                .build();
-//
-//        submission = quizSubmissionRepository.save(submission);
-//
-//        return SubmitResponseDTO.builder()
-//                .submissionId(submission.getId())
-//                .score(score)
-//                .totalMarks(totalMarks)
-//                .percentage(percentage)
-//                .passed(passed)
-//                .message("Quiz submitted successfully")
-//                .build();
-//    }
-//    private boolean answersMatch(String given, String correct) {
-//        if (given == null || correct == null) return false;
-//
-//        // Normalize text: remove quotes, spaces, HTML-like symbols
-//        String normalizedGiven = given
-//                .replaceAll("[\"\\s]+", "")
-//                .replace("&lt;", "<")
-//                .replace("&gt;", ">")
-//                .trim();
-//
-//        String normalizedCorrect = correct
-//                .replaceAll("[\"\\s]+", "")
-//                .replace("&lt;", "<")
-//                .replace("&gt;", ">")
-//                .trim();
-//
-//        return normalizedGiven.equalsIgnoreCase(normalizedCorrect);
-//    }
 
 
     private String convertMapToJson(Map<Long, String> map) {

@@ -1,16 +1,14 @@
 package com.courseservice.Controller;
 
 import com.courseservice.Service.CourseService;
-
-import com.persistence.DTO.CourseRequestDTO;
-import com.persistence.DTO.CourseResponseDTO;
+import com.persistence.DTO.*;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.List;
+import java.util.NoSuchElementException;
 
 @RestController
 @RequestMapping("/api/courses")
@@ -21,32 +19,38 @@ public class CourseController {
 
     @PostMapping
     @PreAuthorize("hasAnyRole('INSTRUCTOR', 'ADMIN')")
-    public ResponseEntity<CourseResponseDTO> createCourse(@RequestBody @Valid CourseRequestDTO dto) {
-        return ResponseEntity.ok(courseService.createCourse(dto));
+    public ResponseEntity<ApiResponse<CourseResponseDTO>> createCourse(@RequestBody @Valid CourseRequestDTO dto) {
+        CourseResponseDTO created = courseService.createCourse(dto);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.ok("Course created successfully", created));
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('INSTRUCTOR', 'ADMIN')")
-    public ResponseEntity<CourseResponseDTO> updateCourse(@PathVariable Long id,
-                                                          @RequestBody @Valid CourseRequestDTO dto) {
-        return ResponseEntity.ok(courseService.updateCourse(id, dto));
+    public ResponseEntity<ApiResponse<CourseResponseDTO>> updateCourse(@PathVariable Long id,
+                                                                       @RequestBody @Valid CourseRequestDTO dto) {
+        CourseResponseDTO updated = courseService.updateCourse(id, dto);
+        return ResponseEntity.ok(ApiResponse.ok("Course updated successfully", updated));
     }
 
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('INSTRUCTOR', 'ADMIN', 'STUDENT')")
-    public ResponseEntity<CourseResponseDTO> getCourseById(@PathVariable Long id) {
-        return ResponseEntity.ok(courseService.getCourseById(id));
+    public ResponseEntity<ApiResponse<CourseResponseDTO>> getCourseById(@PathVariable Long id) {
+        CourseResponseDTO course = courseService.getCourseById(id);
+        if (course == null) throw new NoSuchElementException("Course not found with ID " + id);
+        return ResponseEntity.ok(ApiResponse.ok("Course fetched successfully", course));
     }
+
     @GetMapping
     @PreAuthorize("hasAnyRole('INSTRUCTOR', 'ADMIN', 'STUDENT')")
-    public ResponseEntity<List<CourseResponseDTO>> getAllCourses() {
-        return ResponseEntity.ok(courseService.getAllCourses());
+    public ResponseEntity<ApiResponse<List<CourseResponseDTO>>> getAllCourses() {
+        return ResponseEntity.ok(ApiResponse.ok("All courses fetched", courseService.getAllCourses()));
     }
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Void> deleteCourse(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<Void>> deleteCourse(@PathVariable Long id) {
         courseService.deleteCourse(id);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(ApiResponse.ok("Course deleted successfully", null));
     }
 }
