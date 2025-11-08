@@ -1,8 +1,9 @@
-package com.persistence.Entity;// package com.persistence.Entity;
+package com.persistence.Entity;
 
-import com.persistence.Entity.Quiz;
-import com.persistence.Entity.User;
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
 import java.time.LocalDateTime;
@@ -15,24 +16,39 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 public class QuizSubmission {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
-    @JoinColumn(name="student_id", nullable=false)
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
+    @JoinColumn(name = "student_id", nullable = false)
+    @JsonIgnore
     private User student;
 
-    @ManyToOne
-    @JoinColumn(name="quiz_id", nullable=false)
+
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
+    @JoinColumn(name = "quiz_id", nullable = false)
+    @JsonIgnore
     private Quiz quiz;
 
+    @NotNull
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "MMMM dd, yyyy hh:mm a")
     @Column(nullable = false)
-    @Builder.Default
-    private LocalDateTime submittedAt = LocalDateTime.now();
+    private LocalDateTime submittedAt;
 
+    @Column(nullable = true)
     private Integer score;
 
-    @Column(columnDefinition = "TEXT")
-    private String answersJson; // JSON answers {questionId: "answer"}
+
+    @Column(name = "answers_json", columnDefinition = "TEXT", nullable = false)
+    private String answersJson;
+
+
+    @PrePersist
+    protected void onSubmit() {
+        if (this.submittedAt == null) {
+            this.submittedAt = LocalDateTime.now();
+        }
+    }
 }

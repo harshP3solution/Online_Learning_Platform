@@ -1,5 +1,6 @@
 package com.persistence.Entity;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
@@ -36,8 +37,10 @@ public class Certificate {
 
     @Builder.Default
     @Column(nullable = false)
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern ="MMMM dd, yyyy hh:mm a")
     private LocalDateTime createdAt = LocalDateTime.now();
 
     @Column(nullable = true)
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern ="MMMM dd, yyyy hh:mm a")
     private LocalDateTime completionDate; // date when course completed
 }

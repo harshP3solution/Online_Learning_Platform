@@ -13,4 +13,5 @@ public class EnrollmentCreatedEvent {
     private Long courseId;
     private String courseTitle;
     private String studentEmail;
+    private String message;
 }

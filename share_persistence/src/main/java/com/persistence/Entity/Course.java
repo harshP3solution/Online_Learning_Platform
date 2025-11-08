@@ -1,10 +1,14 @@
 package com.persistence.Entity;
+
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -15,39 +19,60 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 public class Course {
+
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
 
+    @NotBlank(message = "Course title is required")
+    @Size(max = 200, message = "Course title must be less than 200 characters")
+    @Column(nullable = false, length = 200)
     private String title;
 
-    @Column(columnDefinition = "TEXT")
+    @NotBlank(message = "Course description is required")
+    @Column(columnDefinition = "TEXT", nullable = false)
     private String description;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "instructor_id", nullable = false)
+    @JsonIgnore
     private User instructor;
 
+    @NotBlank(message = "Category is required")
+    @Column(nullable = false, length = 100)
     private String category;
 
+    @Column(name = "created_at", nullable = false, updatable = false)
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "MMMM dd, yyyy hh:mm a")
     private LocalDateTime createdAt;
+
+    @Column(name = "updated_at", nullable = false)
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "MMMM dd, yyyy hh:mm a")
     private LocalDateTime updatedAt;
 
-    // Relations
+    @Builder.Default
     @OneToMany(mappedBy = "course")
     @JsonIgnore
-    private List<Lesson> lessons;
+    private List<Lesson> lessons = new ArrayList<>();
 
-    @OneToMany(mappedBy = "course")
-   @JsonIgnore
-    private List<Enrollment> enrollments;
-
+    @Builder.Default
     @OneToMany(mappedBy = "course")
     @JsonIgnore
-    private List<Certificate> certificates;
+    private List<Enrollment> enrollments = new ArrayList<>();
+
+    @Builder.Default
+    @OneToMany(mappedBy = "course")
+    @JsonIgnore
+    private List<Certificate> certificates = new ArrayList<>();
 
     @PrePersist
-    void onCreate() { this.createdAt = this.updatedAt = LocalDateTime.now(); }
+    protected void onCreate() {
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
+    }
+
     @PreUpdate
-    void onUpdate() { this.updatedAt = LocalDateTime.now(); }
+    protected void onUpdate() {
+        this.updatedAt = LocalDateTime.now();
+    }
 }

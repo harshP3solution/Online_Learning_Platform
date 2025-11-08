@@ -1,10 +1,14 @@
 package com.userservices.config;
 
+import com.persistence.security.CustomAccessDeniedHandler;
+import com.persistence.security.CustomAuthenticationEntryPoint;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
@@ -21,6 +25,16 @@ public class SecurityConfig {
     private String secretKey;
 
     @Bean
+    public CustomAccessDeniedHandler accessDeniedHandler() {
+        return new CustomAccessDeniedHandler();
+    }
+
+    @Bean
+    public CustomAuthenticationEntryPoint authenticationEntryPoint() {
+        return new CustomAuthenticationEntryPoint();
+    }
+
+    @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http.csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
@@ -35,9 +49,16 @@ public class SecurityConfig {
 
                         // other roles for email feature
                         .requestMatchers("/api/emails/**").hasAnyRole("STUDENT", "INSTRUCTOR", "ADMIN")
+                        .requestMatchers("api/users/search").hasAnyRole("STUDENT", "ADMIN", "INSTRUCTOR")
+                        .requestMatchers("api/email/forget-password").hasAnyRole("STUDENT", "ADMIN")
+                        .requestMatchers("/api/password/reset").hasAnyRole("STUDENT", "ADMIN")
 
                         // anything else requires authentication
                         .anyRequest().authenticated()
+                )
+                .exceptionHandling(ex -> ex
+                        .accessDeniedHandler(accessDeniedHandler())
+                        .authenticationEntryPoint(authenticationEntryPoint())
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2
                         .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter()))
@@ -62,4 +83,9 @@ public class SecurityConfig {
         jwtConverter.setJwtGrantedAuthoritiesConverter(converter);
         return jwtConverter;
     }
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+
 }

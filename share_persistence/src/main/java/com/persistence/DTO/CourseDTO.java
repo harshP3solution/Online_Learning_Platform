@@ -1,33 +1,32 @@
 package com.persistence.DTO;
 
 
-
 import lombok.*;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class UserResponseDTO {
+public class CourseDTO {
     private Long id;
-    private String fullName;
-    private String email;
-    private String role;
+    private String title;
+    private String description;
+    private String category;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
-    private List<CourseDTO> coursesTaught;
+    private InstructorDTO instructor;
+
 
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
     @Builder
-    public static class CourseDTO {
+    public static class InstructorDTO {
         private Long id;
-        private String title;
-        private String category;
+        private String fullName;
+        private String email;
+        private String role;
     }
 }
-

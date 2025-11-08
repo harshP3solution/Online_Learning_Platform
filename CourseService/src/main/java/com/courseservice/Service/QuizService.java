@@ -1,19 +1,21 @@
 package com.courseservice.Service;
 
-import com.persistence.DTO.QuizDTO;
-import com.persistence.DTO.QuizQuestionDTO;
-import com.persistence.DTO.SubmitRequestDTO;
-import com.persistence.DTO.SubmitResponseDTO;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.persistence.DTO.*;
 import com.persistence.Entity.*;
 import com.persistence.Repository.*;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import org.springframework.hateoas.EntityModel;
+import org.springframework.hateoas.Link;
+import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
 
 @Service
 @RequiredArgsConstructor
@@ -31,12 +33,10 @@ public class QuizService {
     private static final int DEFAULT_QUIZ_SIZE = 10;
 
     @Transactional
-    public void addQuizQuestions(QuizDTO dto) {
-        // Fetch the course (since we now add quiz per course)
+    public EntityModel<QuizDTO> addQuizQuestions(QuizDTO dto) {
         Course course = courseRepository.findById(dto.getCourseId())
                 .orElseThrow(() -> new NoSuchElementException("Course not found: " + dto.getCourseId()));
 
-        // Create quiz
         Quiz quiz = Quiz.builder()
                 .course(course)
                 .title(dto.getTitle())
@@ -46,24 +46,38 @@ public class QuizService {
                 .build();
         quizRepository.save(quiz);
 
-        // Save each question and link to quiz + course
         for (QuizQuestionDTO q : dto.getQuestions()) {
             QuizQuestion question = QuizQuestion.builder()
                     .quiz(quiz)
                     .course(course)
                     .questionText(q.getQuestionText())
                     .optionsJson(q.getOptionsJson())
-                   // .correctAnswer(q.getCorrectAnswer())
+                    //.correctAnswer(q.getCorrectAnswer())
                     .marks(q.getMarks() == null ? 1 : q.getMarks())
                     .build();
             quizQuestionRepository.save(question);
         }
+
+        QuizDTO responseDto = QuizDTO.builder()
+                .id(quiz.getId())
+                .courseId(course.getId())
+                .title(quiz.getTitle())
+                .description(quiz.getDescription())
+                .totalMarks(quiz.getTotalMarks())
+                .build();
+
+        EntityModel<QuizDTO> model = EntityModel.of(responseDto,
+                linkTo(methodOn(com.courseservice.Controller.QuizController.class)
+                        .getQuizById(quiz.getId())).withSelfRel(),
+                linkTo(methodOn(com.courseservice.Controller.QuizController.class)
+                        .getAllQuizzesByCourse(course.getId())).withRel("course-quizzes")
+        );
+
+        return model;
     }
 
- //GENERATE FINAL QUIZ AFTER COURSE COMPLETION
-
     @Transactional
-    public QuizDTO generateFinalQuizAfterCourseCompletion(Long studentId, Long courseId) {
+    public EntityModel<QuizDTO> generateFinalQuizAfterCourseCompletion(Long studentId, Long courseId) {
         Course course = courseRepository.findById(courseId)
                 .orElseThrow(() -> new NoSuchElementException("Course not found: " + courseId));
 
@@ -101,7 +115,6 @@ public class QuizService {
                 .build();
         quizRepository.save(quiz);
 
-        //  clone questions properly
         for (QuizQuestion q : selected) {
             QuizQuestion copy = QuizQuestion.builder()
                     .quiz(quiz)
@@ -123,7 +136,7 @@ public class QuizService {
                         .build())
                 .collect(Collectors.toList());
 
-        return QuizDTO.builder()
+        QuizDTO dto = QuizDTO.builder()
                 .id(quiz.getId())
                 .courseId(course.getId())
                 .title(quiz.getTitle())
@@ -131,12 +144,21 @@ public class QuizService {
                 .totalMarks(totalMarks)
                 .questions(questionDTOs)
                 .build();
+
+        EntityModel<QuizDTO> model = EntityModel.of(dto,
+                linkTo(methodOn(com.courseservice.Controller.QuizController.class)
+                        .getQuizById(quiz.getId())).withSelfRel(),
+                linkTo(methodOn(com.courseservice.Controller.QuizController.class)
+                        .submitQuiz(null)).withRel("submit-quiz"),
+                linkTo(methodOn(com.courseservice.Controller.QuizController.class)
+                        .getAllQuizzesByCourse(courseId)).withRel("course-quizzes")
+        );
+
+        return model;
     }
 
-
-    //SUBMIT QUIZ ANSWERS
     @Transactional
-    public SubmitResponseDTO submitQuiz(SubmitRequestDTO req) {
+    public EntityModel<SubmitResponseDTO> submitQuiz(SubmitRequestDTO req) {
         Quiz quiz = quizRepository.findById(req.getQuizId())
                 .orElseThrow(() -> new NoSuchElementException("Quiz not found: " + req.getQuizId()));
 
@@ -173,7 +195,7 @@ public class QuizService {
 
         submission = quizSubmissionRepository.save(submission);
 
-        return SubmitResponseDTO.builder()
+        SubmitResponseDTO response = SubmitResponseDTO.builder()
                 .submissionId(submission.getId())
                 .score(score)
                 .totalMarks(totalMarks)
@@ -181,8 +203,16 @@ public class QuizService {
                 .passed(passed)
                 .message("Quiz submitted successfully")
                 .build();
-    }
 
+        EntityModel<SubmitResponseDTO> model = EntityModel.of(response,
+                linkTo(methodOn(com.courseservice.Controller.QuizController.class)
+                        .getSubmissionById(submission.getId())).withSelfRel(),
+                linkTo(methodOn(com.courseservice.Controller.QuizController.class)
+                        .getQuizById(quiz.getId())).withRel("quiz-details")
+        );
+
+        return model;
+    }
 
     private String convertMapToJson(Map<Long, String> map) {
         try {

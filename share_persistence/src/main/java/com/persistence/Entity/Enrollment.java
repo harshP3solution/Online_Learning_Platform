@@ -1,10 +1,13 @@
 package com.persistence.Entity;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -20,28 +23,59 @@ public class Enrollment {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.EAGER, optional = false) // ensure not null
+    @NotNull(message = "Student cannot be null")
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "student_id", nullable = false)
     private User student;
 
-    @ManyToOne(fetch = FetchType.EAGER, optional = false) // ensure not null
+
+    @NotNull(message = "Course cannot be null")
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "course_id", nullable = false)
     private Course course;
 
-    @Builder.Default
-    @Column(nullable = false) // always set
-    private LocalDateTime enrollmentDate = LocalDateTime.now();
 
-    @Column(nullable = true)
+    @Column(name = "enrollment_date", nullable = false, updatable = false)
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "MMMM dd, yyyy hh:mm a")
+    private LocalDateTime enrollmentDate;
+
+
+    @Column
     private Float progress;
 
-    @Column(nullable = true)
+
+    @Column
     private Boolean completed;
 
-    @Column(nullable = true)
+    @Column(name = "completed_at")
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "MMMM dd, yyyy hh:mm a")
     private LocalDateTime completedAt;
 
+    @Column(name = "created_at", updatable = false)
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "MMMM dd, yyyy hh:mm a")
+    private LocalDateTime createdAt;
+    @Column(name = "updated_at")
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "MMMM dd, yyyy hh:mm a")
+    private LocalDateTime updatedAt;
+
+
+    @Builder.Default
     @OneToMany(mappedBy = "enrollment")
     @JsonIgnore
-    private List<LessonProgress> lessonProgressList;
+    private List<LessonProgress> lessonProgressList = new ArrayList<>();
+
+
+    @PrePersist
+    protected void onCreate() {
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
+        if (this.enrollmentDate == null) {
+            this.enrollmentDate = LocalDateTime.now();
+        }
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        this.updatedAt = LocalDateTime.now();
+    }
 }

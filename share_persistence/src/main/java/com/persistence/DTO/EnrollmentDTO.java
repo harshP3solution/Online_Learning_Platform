@@ -7,7 +7,8 @@ import java.time.LocalDateTime;
 
 @Data
 @Builder
-public class EnrollmentResponseDTO {
+
+public class EnrollmentDTO {
     private Long id;
     private LocalDateTime enrollmentDate;
     private float progress;

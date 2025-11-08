@@ -9,6 +9,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.beans.factory.annotation.Autowired;
 import com.userservices.Service.EmailService;
 
+import static org.apache.kafka.common.requests.DeleteAclsResponse.log;
+
 @Component
 public class EnrollmentEventListener {
 
@@ -17,7 +19,7 @@ public class EnrollmentEventListener {
 
     @KafkaListener(topics = "enrollment-created-topic", groupId = "email-service")
     public void handleEnrollmentCreated(EnrollmentCreatedEvent event) {
-        System.out.println("📩 New Enrollment for Course: " + event.getCourseTitle());
+        log.info("🎓 Received enrollment event: {}", event.getMessage());
         // you can call emailService.sendRegistrationEmail(...) if needed
     }
 }

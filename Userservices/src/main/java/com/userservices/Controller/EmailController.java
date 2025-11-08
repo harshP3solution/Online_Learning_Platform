@@ -3,6 +3,7 @@ package com.userservices.Controller;
 import com.persistence.DTO.ApiResponse;
 import com.persistence.Entity.EmailLog;
 import com.persistence.Repository.EmailLogRepository;
+import com.userservices.Service.AuthService;
 import com.userservices.Service.EmailService;
 import org.springframework.http.*;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -16,10 +17,12 @@ public class EmailController {
 
     private final EmailService emailService;
     private final EmailLogRepository emailLogRepository;
+    private final AuthService authService;
 
-    public EmailController(EmailService emailService, EmailLogRepository emailLogRepository) {
+    public EmailController(EmailService emailService, EmailLogRepository emailLogRepository, AuthService authService) {
         this.emailService = emailService;
         this.emailLogRepository = emailLogRepository;
+        this.authService = authService;
     }
 
     @GetMapping("/logs")
@@ -42,5 +45,17 @@ public class EmailController {
         List<EmailLog> logs = emailLogRepository.findByCourseId(courseId);
         if (logs.isEmpty()) throw new NoSuchElementException("No email logs found for course " + courseId);
         return ResponseEntity.ok(ApiResponse.ok("Email logs fetched successfully", logs));
+    }
+@PreAuthorize("hasAnyRole('ADMIN','STUDENT')")
+    @PostMapping("/forgot-password")
+    public ResponseEntity<String> forgotPassword(@RequestParam String email) {
+        return ResponseEntity.ok(authService.forgotPassword(email));
+    }
+
+    @PreAuthorize("hasAnyRole('ADMIN','STUDENT')")
+    @PostMapping("/reset-password")
+    public ResponseEntity<String> resetPassword(@RequestParam String token,
+                                                @RequestParam String newPassword) {
+        return ResponseEntity.ok(authService.resetPassword(token, newPassword));
     }
 }
